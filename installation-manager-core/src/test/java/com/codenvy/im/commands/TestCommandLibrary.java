@@ -18,6 +18,7 @@
 package com.codenvy.im.commands;
 
 import com.codenvy.im.agent.AgentException;
+import com.codenvy.im.commands.decorators.PuppetErrorInterrupter;
 import com.codenvy.im.managers.InstallOptions;
 import com.codenvy.im.managers.InstallType;
 import com.codenvy.im.managers.NodeConfig;
@@ -330,5 +331,15 @@ public class TestCommandLibrary {
                                              "    sudo puppet agent --onetime --ignorecache --no-daemonize --no-usecacheonfailure --no-splay; " +
                                              "fi;', " +
                                              "'agent'='{'host'='localhost', 'user'='%s', 'identity'='[~/.ssh/id_rsa]'}'}", SYSTEM_USER_NAME));
+    }
+
+    @Test
+    public void testCreateReadFileCommand() {
+        Path fileToRead = Paths.get("messages");
+        Command command = CommandLibrary.createReadFileCommand(fileToRead, PuppetErrorInterrupter.SELECTION_LINE_NUMBER, false);
+        assertEquals(command.toString(), "{'command'='tail -n 5 messages', 'agent'='LocalAgent'}");
+
+        command = CommandLibrary.createReadFileCommand(fileToRead, PuppetErrorInterrupter.SELECTION_LINE_NUMBER + 1, true);
+        assertEquals(command.toString(), "{'command'='sudo tail -n 6 messages', 'agent'='LocalAgent'}");
     }
 }
