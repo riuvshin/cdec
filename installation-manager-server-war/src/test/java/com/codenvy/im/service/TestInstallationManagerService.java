@@ -18,11 +18,12 @@
 
 package com.codenvy.im.service;
 
+import com.codenvy.api.subscription.shared.dto.SubscriptionDescriptor;
 import com.codenvy.im.BaseTest;
 import com.codenvy.im.artifacts.Artifact;
 import com.codenvy.im.artifacts.ArtifactNotFoundException;
 import com.codenvy.im.artifacts.ArtifactProperties;
-import com.codenvy.im.facade.IMArtifactLabeledFacade;
+import com.codenvy.im.facade.IMCliFilteredFacade;
 import com.codenvy.im.managers.BackupConfig;
 import com.codenvy.im.managers.Config;
 import com.codenvy.im.managers.ConfigManager;
@@ -44,7 +45,6 @@ import com.codenvy.im.utils.Version;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
-import com.codenvy.api.subscription.shared.dto.SubscriptionDescriptor;
 import org.eclipse.che.api.auth.AuthenticationException;
 import org.eclipse.che.api.auth.server.dto.DtoServerImpls;
 import org.eclipse.che.api.auth.shared.dto.Credentials;
@@ -105,15 +105,15 @@ public class TestInstallationManagerService extends BaseTest {
     private InstallationManagerService service;
 
     @Mock
-    private IMArtifactLabeledFacade mockFacade;
+    private IMCliFilteredFacade mockFacade;
     @Mock
-    private ConfigManager           configManager;
+    private ConfigManager       configManager;
     @Mock
-    private Principal               mockPrincipal;
+    private Principal           mockPrincipal;
     @Mock
-    private Config                  mockConfig;
+    private Config              mockConfig;
     @Mock
-    private Artifact                mockArtifact;
+    private Artifact            mockArtifact;
 
     @BeforeMethod
     public void setUp() throws Exception {
@@ -235,9 +235,9 @@ public class TestInstallationManagerService extends BaseTest {
     @Test
     public void testUpdateCodenvy() throws Exception {
         doReturn(InstallType.SINGLE_SERVER).when(configManager).detectInstallationType();
-        doReturn(Version.valueOf("3.1.0")).when(mockFacade).getLatestInstallableVersion(any(Artifact.class));
         doReturn(ImmutableList.of("a")).when(mockFacade).getUpdateInfo(any(Artifact.class), any(InstallType.class));
         doReturn("id").when(mockFacade).update(any(Artifact.class), any(Version.class), any(InstallOptions.class));
+        doReturn(Version.valueOf("3.1.0")).when(mockFacade).getLatestInstallableVersion(any(Artifact.class));
 
         Map<String, String> testConfigProperties = new HashMap<>();
         testConfigProperties.put("property1", "value1");
@@ -246,8 +246,8 @@ public class TestInstallationManagerService extends BaseTest {
         doReturn(testConfigProperties).when(configManager).prepareInstallProperties(null,
                                                                                     InstallType.SINGLE_SERVER,
                                                                                     createArtifact(ARTIFACT_NAME),
-                                                                                    Version.valueOf("3.1.0"));
-
+                                                                                    Version.valueOf("3.1.0"),
+                                                                                    false);
         Response result = service.updateCodenvy(1);
         assertEquals(result.getStatus(), Response.Status.ACCEPTED.getStatusCode());
 

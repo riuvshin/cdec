@@ -19,19 +19,17 @@
 package com.codenvy.im.facade;
 
 import com.codenvy.im.artifacts.Artifact;
-import com.codenvy.im.artifacts.ArtifactProperties;
-import com.codenvy.im.artifacts.VersionLabel;
+import com.codenvy.im.artifacts.InstallManagerArtifact;
 import com.codenvy.im.managers.BackupManager;
 import com.codenvy.im.managers.DownloadManager;
-import com.codenvy.im.managers.DownloadNotStartedException;
 import com.codenvy.im.managers.InstallManager;
+import com.codenvy.im.managers.InstallOptions;
 import com.codenvy.im.managers.NodeManager;
 import com.codenvy.im.managers.PasswordManager;
 import com.codenvy.im.managers.StorageManager;
 import com.codenvy.im.response.ArtifactInfo;
 import com.codenvy.im.response.BasicArtifactInfo;
 import com.codenvy.im.response.DownloadArtifactInfo;
-import com.codenvy.im.response.DownloadProgressResponse;
 import com.codenvy.im.response.InstallArtifactInfo;
 import com.codenvy.im.response.UpdatesArtifactInfo;
 import com.codenvy.im.saas.SaasAccountServiceProxy;
@@ -49,30 +47,27 @@ import javax.inject.Named;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Map;
-
-import static com.codenvy.im.artifacts.ArtifactFactory.createArtifact;
 
 /**
- * Sets {@link com.codenvy.im.artifacts.VersionLabel} to every artifact info.
+ * Get rids of any references to {@link com.codenvy.im.artifacts.InstallManagerArtifact} from REST service
  *
  * @author Anatoliy Bazko
  */
 @Singleton
-public class IMArtifactLabeledFacade extends InstallationManagerFacade {
+public class IMCliFilteredFacade extends IMArtifactLabeledFacade {
 
     @Inject
-    public IMArtifactLabeledFacade(@Named("installation-manager.download_dir") String downloadDir,
-                                   @Named("installation-manager.update_server_endpoint") String updateServerEndpoint,
-                                   HttpTransport transport,
-                                   SaasAuthServiceProxy saasAuthServiceProxy,
-                                   SaasAccountServiceProxy saasAccountServiceProxy,
-                                   PasswordManager passwordManager,
-                                   NodeManager nodeManager,
-                                   BackupManager backupManager,
-                                   StorageManager storageManager,
-                                   InstallManager installManager,
-                                   DownloadManager downloadManager) {
+    public IMCliFilteredFacade(@Named("installation-manager.download_dir") String downloadDir,
+                               @Named("installation-manager.update_server_endpoint") String updateServerEndpoint,
+                               HttpTransport transport,
+                               SaasAuthServiceProxy saasAuthServiceProxy,
+                               SaasAccountServiceProxy saasAccountServiceProxy,
+                               PasswordManager passwordManager,
+                               NodeManager nodeManager,
+                               BackupManager backupManager,
+                               StorageManager storageManager,
+                               InstallManager installManager,
+                               DownloadManager downloadManager) {
         super(downloadDir,
               updateServerEndpoint,
               transport,
@@ -86,12 +81,11 @@ public class IMArtifactLabeledFacade extends InstallationManagerFacade {
               downloadManager);
     }
 
-
     /** {@inheritDoc} */
     @Override
     public Collection<InstallArtifactInfo> getInstalledVersions() throws IOException {
         Collection<InstallArtifactInfo> installedVersions = super.getInstalledVersions();
-        setVersionLabel(installedVersions);
+        removeImCliArtifact(installedVersions);
         return installedVersions;
     }
 
@@ -99,7 +93,7 @@ public class IMArtifactLabeledFacade extends InstallationManagerFacade {
     @Override
     public Collection<UpdatesArtifactInfo> getUpdates() throws IOException {
         Collection<UpdatesArtifactInfo> updates = super.getUpdates();
-        setVersionLabel(updates);
+        removeImCliArtifact(updates);
         return updates;
     }
 
@@ -107,7 +101,7 @@ public class IMArtifactLabeledFacade extends InstallationManagerFacade {
     @Override
     public Collection<DownloadArtifactInfo> getDownloads(@Nullable Artifact artifact, @Nullable Version version) throws IOException {
         Collection<DownloadArtifactInfo> downloads = super.getDownloads(artifact, version);
-        setVersionLabel(downloads);
+        removeImCliArtifact(downloads);
         return downloads;
     }
 
@@ -115,7 +109,7 @@ public class IMArtifactLabeledFacade extends InstallationManagerFacade {
     @Override
     public Collection<ArtifactInfo> getArtifacts() throws IOException {
         Collection<ArtifactInfo> artifacts = super.getArtifacts();
-        setVersionLabel(artifacts);
+        removeImCliArtifact(artifacts);
         return artifacts;
     }
 
@@ -123,41 +117,44 @@ public class IMArtifactLabeledFacade extends InstallationManagerFacade {
     @Override
     public Collection<UpdatesArtifactInfo> getAllUpdates(@Nullable Artifact artifact) throws IOException, JsonParseException {
         Collection<UpdatesArtifactInfo> updates = super.getAllUpdates(artifact);
-        setVersionLabel(updates);
+        removeImCliArtifact(updates);
         return updates;
     }
 
     /** {@inheritDoc} */
     @Override
-    public DownloadProgressResponse getDownloadProgress() throws DownloadNotStartedException, IOException {
-        DownloadProgressResponse response = super.getDownloadProgress();
-        setVersionLabel(response.getArtifacts());
-        return response;
+    public String install(@Nonnull Artifact artifact, @Nonnull Version version, @Nonnull InstallOptions installOptions) throws IOException {
+        if (artifact.getName().equals(InstallManagerArtifact.NAME)) {
+            throw new UnsupportedOperationException(InstallManagerArtifact.NAME + " can't be installed");
+        }
+        return super.install(artifact, version, installOptions);
     }
 
-    protected void setVersionLabel(Collection<? extends BasicArtifactInfo> infos) throws IOException {
+    /** {@inheritDoc} */
+    @Override
+    public String update(@Nonnull Artifact artifact, @Nonnull Version version, @Nonnull InstallOptions installOptions) throws IOException {
+        if (artifact.getName().equals(InstallManagerArtifact.NAME)) {
+            throw new UnsupportedOperationException(InstallManagerArtifact.NAME + " can't be updated");
+        }
+        return super.update(artifact, version, installOptions);
+    }
+
+    @Override
+    public Version getLatestInstallableVersion(Artifact artifact) throws IOException {
+        if (artifact.getName().equals(InstallManagerArtifact.NAME)) {
+            throw new UnsupportedOperationException(InstallManagerArtifact.NAME + " can't be updated");
+        }
+        return super.getLatestInstallableVersion(artifact);
+    }
+
+    protected void removeImCliArtifact(Collection<? extends BasicArtifactInfo> infos) throws IOException {
         Iterator<? extends BasicArtifactInfo> iter = infos.iterator();
 
         while (iter.hasNext()) {
             BasicArtifactInfo info = iter.next();
-            VersionLabel versionLabel = fetchVersionLabel(info.getArtifact(), info.getVersion());
-            info.setLabel(versionLabel);
+            if (info.getArtifact().equals(InstallManagerArtifact.NAME)) {
+                iter.remove();
+            }
         }
-    }
-
-    @Nullable
-    protected VersionLabel fetchVersionLabel(@Nonnull String artifactName, @Nonnull String versionNumber) throws IOException {
-        Artifact artifact = createArtifact(artifactName);
-        Version version = Version.valueOf(versionNumber);
-
-        Map<String, String> properties;
-        try {
-            properties = artifact.getProperties(version);
-        } catch (IOException e) {
-            return null;
-        }
-
-        String label = properties.get(ArtifactProperties.LABEL_PROPERTY);
-        return label != null ? VersionLabel.valueOf(label.toUpperCase()) : null;
     }
 }

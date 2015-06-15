@@ -17,9 +17,10 @@
  */
 package com.codenvy.im.service;
 
+import com.codenvy.api.subscription.shared.dto.SubscriptionDescriptor;
 import com.codenvy.im.artifacts.Artifact;
 import com.codenvy.im.artifacts.CDECArtifact;
-import com.codenvy.im.facade.IMArtifactLabeledFacade;
+import com.codenvy.im.facade.IMCliFilteredFacade;
 import com.codenvy.im.managers.BackupConfig;
 import com.codenvy.im.managers.Config;
 import com.codenvy.im.managers.ConfigManager;
@@ -39,7 +40,6 @@ import com.google.common.collect.ImmutableMap;
 import com.jayway.restassured.http.ContentType;
 import com.jayway.restassured.specification.RequestSpecification;
 
-import com.codenvy.api.subscription.shared.dto.SubscriptionDescriptor;
 import org.eclipse.che.api.auth.server.dto.DtoServerImpls;
 import org.eclipse.che.api.auth.shared.dto.Credentials;
 import org.eclipse.che.dto.server.DtoFactory;
@@ -62,6 +62,7 @@ import static com.codenvy.im.artifacts.ArtifactFactory.createArtifact;
 import static com.jayway.restassured.RestAssured.given;
 import static java.lang.String.format;
 import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -78,11 +79,11 @@ public class TestInstallationManagerServiceContract {
                                                   + "    \n"
                                                   + "}";
     @Mock
-    public  IMArtifactLabeledFacade facade;
+    public IMCliFilteredFacade facade;
     @Mock
-    public  ConfigManager           configManager;
+    public ConfigManager       configManager;
     @Mock
-    public  SaasUserCredentials     saasUserCredentials;
+    public SaasUserCredentials saasUserCredentials;
 
     public InstallationManagerService service;
 
@@ -394,7 +395,11 @@ public class TestInstallationManagerServiceContract {
                 public Object apply(@Nullable Object o) {
                     try {
                         doReturn(InstallType.SINGLE_SERVER).when(configManager).detectInstallationType();
-                        doReturn(null).when(configManager).prepareInstallProperties(anyString(), any(InstallType.class), any(Artifact.class), any(Version.class));
+                        doReturn(null).when(configManager).prepareInstallProperties(anyString(),
+                                                                                    any(InstallType.class),
+                                                                                    any(Artifact.class),
+                                                                                    any(Version.class),
+                                                                                    anyBoolean());
                         doReturn("id").when(facade).update(any(Artifact.class), any(Version.class), any(InstallOptions.class));
                         doReturn(ImmutableList.of("a", "b")).when(facade).getUpdateInfo(any(Artifact.class), any(InstallType.class));
                         doReturn(Version.valueOf("1.0.0")).when(facade).getLatestInstallableVersion(any(Artifact.class));

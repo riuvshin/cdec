@@ -46,6 +46,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import static org.mockito.Matchers.anyBoolean;
 import static org.mockito.Matchers.anyMap;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.any;
@@ -83,7 +84,6 @@ public class TestInstallCommand extends AbstractTestCommand {
                                                                               .loadInstalledCodenvyConfig(InstallType.MULTI_SERVER);
 
         facade = mock(IMArtifactLabeledFacade.class);
-        doReturn(Version.valueOf("1.0.1")).when(facade).getLatestInstallableVersion(any(Artifact.class));
         doReturn(ImmutableList.of("step 1", "step 2")).when(facade).getInstallInfo(any(Artifact.class), any(InstallType.class));
         commandSession = mock(CommandSession.class);
 
@@ -120,6 +120,7 @@ public class TestInstallCommand extends AbstractTestCommand {
 
         CommandInvoker commandInvoker = new CommandInvoker(spyCommand, commandSession);
         commandInvoker.argument("artifact", CDECArtifact.NAME);
+        commandInvoker.argument("version", "1.0.1");
 
         CommandInvoker.Result result = commandInvoker.invoke();
         String output = result.disableAnsi().getOutputStream();
@@ -147,6 +148,7 @@ public class TestInstallCommand extends AbstractTestCommand {
 
         CommandInvoker commandInvoker = new CommandInvoker(spyCommand, commandSession);
         commandInvoker.argument("artifact", CDECArtifact.NAME);
+        commandInvoker.argument("version", "1.0.1");
         commandInvoker.option("--multi", Boolean.TRUE);
 
         CommandInvoker.Result result = commandInvoker.invoke();
@@ -165,12 +167,12 @@ public class TestInstallCommand extends AbstractTestCommand {
 
     @Test
     public void testEnterInstallOptionsForUpdate() throws Exception {
-        doReturn(Version.valueOf("1.0.2")).when(facade).getLatestInstallableVersion(any(Artifact.class));
-        doReturn(false).when(spyCommand).isInstall();
+        doReturn(false).when(spyCommand).isInstall(any(Artifact.class));
         doReturn(new HashMap<>(ImmutableMap.of("a", "2", "b", "MANDATORY"))).when(mockConfigManager).prepareInstallProperties(anyString(),
                                                                                                                               any(InstallType.class),
                                                                                                                               any(Artifact.class),
-                                                                                                                              any(Version.class));
+                                                                                                                              any(Version.class),
+                                                                                                                              anyBoolean());
         // user always enter "some value" as property value
         doAnswer(new Answer() {
             @Override
@@ -200,6 +202,7 @@ public class TestInstallCommand extends AbstractTestCommand {
 
         CommandInvoker commandInvoker = new CommandInvoker(spyCommand, commandSession);
         commandInvoker.argument("artifact", CDECArtifact.NAME);
+        commandInvoker.argument("version", "1.0.2");
 
         CommandInvoker.Result result = commandInvoker.invoke();
         String output = result.disableAnsi().getOutputStream();
@@ -286,6 +289,7 @@ public class TestInstallCommand extends AbstractTestCommand {
 
         CommandInvoker commandInvoker = new CommandInvoker(spyCommand, commandSession);
         commandInvoker.argument("artifact", CDECArtifact.NAME);
+        commandInvoker.argument("version", "1.0.1");
 
         CommandInvoker.Result result = commandInvoker.invoke();
         String output = result.disableAnsi().getOutputStream();
@@ -309,6 +313,7 @@ public class TestInstallCommand extends AbstractTestCommand {
 
         CommandInvoker commandInvoker = new CommandInvoker(spyCommand, commandSession);
         commandInvoker.argument("artifact", CDECArtifact.NAME);
+        commandInvoker.argument("version", "1.0.1");
 
         CommandInvoker.Result result = commandInvoker.invoke();
         String output = result.disableAnsi().getOutputStream();
@@ -342,7 +347,8 @@ public class TestInstallCommand extends AbstractTestCommand {
 
     @Test
     public void testListInstalledArtifactsWhenServiceError() throws Exception {
-        doReturn(new HashMap<>(ImmutableMap.of("a", "2", "b", "MANDATORY"))).when(mockConfigManager).merge(anyMap(), anyMap());
+        doReturn(new HashMap<>(ImmutableMap.of("a", "2", "b", "MANDATORY"))).when(mockConfigManager)
+                                                                            .merge(any(Version.class), anyMap(), anyMap());
 
         doThrow(new RuntimeException("Server Error Exception"))
                 .when(facade)
@@ -364,9 +370,10 @@ public class TestInstallCommand extends AbstractTestCommand {
         doReturn(new HashMap<>(ImmutableMap.of("a", "MANDATORY"))).when(mockConfigManager).prepareInstallProperties(anyString(),
                                                                                                                     any(InstallType.class),
                                                                                                                     any(Artifact.class),
-                                                                                                                    any(Version.class));
+                                                                                                                    any(Version.class),
+                                                                                                                    anyBoolean());
 
-        doReturn(true).when(spyCommand).isInstall();
+        doReturn(true).when(spyCommand).isInstall(any(Artifact.class));
         // user always enter "some value" as property value
         doAnswer(new Answer() {
             @Override
@@ -378,7 +385,6 @@ public class TestInstallCommand extends AbstractTestCommand {
 
         // no installation info provided
         doReturn(Collections.emptyList()).when(facade).getInstallInfo(any(Artifact.class), any(InstallType.class));
-        doReturn(Version.valueOf("1.0.0")).when(facade).getLatestInstallableVersion(any(Artifact.class));
 
         // firstly don't confirm install options, then confirm
         doAnswer(new Answer() {
@@ -397,6 +403,7 @@ public class TestInstallCommand extends AbstractTestCommand {
 
         CommandInvoker commandInvoker = new CommandInvoker(spyCommand, commandSession);
         commandInvoker.argument("artifact", CDECArtifact.NAME);
+        commandInvoker.argument("version", "1.0.0");
 
         CommandInvoker.Result result = commandInvoker.invoke();
         String output = result.disableAnsi().getOutputStream();

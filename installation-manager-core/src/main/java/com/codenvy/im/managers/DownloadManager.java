@@ -29,15 +29,12 @@ import com.codenvy.im.utils.Version;
 import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 
 import org.eclipse.che.commons.json.JsonParseException;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.inject.Named;
 import java.io.IOException;
@@ -46,6 +43,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.AbstractMap;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -56,6 +54,8 @@ import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static com.codenvy.im.artifacts.ArtifactProperties.FILE_NAME_PROPERTY;
 import static com.codenvy.im.artifacts.ArtifactProperties.MD5_PROPERTY;
@@ -83,8 +83,8 @@ import static org.apache.commons.io.FileUtils.deleteDirectory;
 public class DownloadManager {
 
     private static final Logger LOG = Logger.getLogger(DownloadManager.class.getSimpleName());  // use java.util.logging instead of slf4j 
-                                                                                                // to prevent echo error message into the CLI console
-    
+    // to prevent echo error message into the CLI console
+
     private final String        updateEndpoint;
     private final HttpTransport transport;
     private final Path          downloadDir;
@@ -374,19 +374,35 @@ public class DownloadManager {
      * @throws java.io.IOException
      *         if an I/O error occurred
      */
-    public Collection<Map.Entry<Artifact, Version>> getAllUpdates(@Nonnull final Artifact artifact,
-                                                                  @Nullable Version fromVersion) throws IOException, JsonParseException {
+    public Collection<Map.Entry<Artifact, Version>> getAllUpdates(@Nullable final Artifact artifact) throws IOException {
+        ArrayList<Map.Entry<Artifact, Version>> allUpdates = new ArrayList<>();
 
-        String requestUrl = combinePaths(updateEndpoint, "repository/updates/" + artifact + (fromVersion == null ? ""
-                                                                                                                 : "?fromVersion=" +
-                                                                                                                   fromVersion.toString()));
-        List<String> l = fromJson(transport.doGet(requestUrl), List.class);
-        return FluentIterable.from(l).transform(new Function<String, Map.Entry<Artifact, Version>>() {
-            @Override
-            public Map.Entry<Artifact, Version> apply(String version) {
-                return new AbstractMap.SimpleEntry<>(artifact, Version.valueOf(version));
+        Set<Artifact> artifacts2Check;
+        if (artifact != null) {
+            artifacts2Check = ImmutableSet.of(artifact);
+        } else {
+            artifacts2Check = Collections.unmodifiableSet(artifacts);
+        }
+
+        for (final Artifact art2Check : artifacts2Check) {
+            Version installedVersion = art2Check.getInstalledVersion();
+            String requestUrl = combinePaths(updateEndpoint,
+                                             "repository/updates",
+                                             art2Check + (installedVersion == null ? "" : "?fromVersion=" + installedVersion.toString()));
+            try {
+                List<String> l = fromJson(transport.doGet(requestUrl), List.class);
+                allUpdates.addAll(FluentIterable.from(l).transform(new Function<String, Map.Entry<Artifact, Version>>() {
+                    @Override
+                    public Map.Entry<Artifact, Version> apply(String version) {
+                        return new AbstractMap.SimpleEntry<>(art2Check, Version.valueOf(version));
+                    }
+                }).toList());
+            } catch (JsonParseException e) {
+                throw new IOException(e);
             }
-        }).toList();
+        }
+
+        return allUpdates;
     }
 
     private void checkRWPermissions(Path downloadDir) throws IOException {

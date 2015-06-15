@@ -17,12 +17,14 @@
  */
 package com.codenvy.im.service;
 
+import com.codenvy.api.subscription.shared.dto.SubscriptionDescriptor;
 import com.codenvy.im.artifacts.Artifact;
 import com.codenvy.im.artifacts.ArtifactFactory;
 import com.codenvy.im.artifacts.ArtifactNotFoundException;
 import com.codenvy.im.artifacts.ArtifactProperties;
 import com.codenvy.im.artifacts.CDECArtifact;
-import com.codenvy.im.facade.IMArtifactLabeledFacade;
+import com.codenvy.im.facade.IMCliFilteredFacade;
+import com.codenvy.im.facade.InstallationManagerFacade;
 import com.codenvy.im.managers.AdditionalNodesConfigUtil;
 import com.codenvy.im.managers.BackupConfig;
 import com.codenvy.im.managers.Config;
@@ -57,7 +59,6 @@ import com.wordnik.swagger.annotations.ApiResponse;
 import com.wordnik.swagger.annotations.ApiResponses;
 
 import org.eclipse.che.api.account.shared.dto.AccountReference;
-import com.codenvy.api.subscription.shared.dto.SubscriptionDescriptor;
 import org.eclipse.che.api.auth.AuthenticationException;
 import org.eclipse.che.api.auth.server.dto.DtoServerImpls;
 import org.eclipse.che.api.auth.shared.dto.Credentials;
@@ -118,15 +119,15 @@ public class InstallationManagerService {
                                                                         Pattern.compile("_pass$"),
                                                                         Pattern.compile("secret$")};
 
-    protected final IMArtifactLabeledFacade delegate;
-    protected final ConfigManager           configManager;
-    protected final String                  backupDir;
+    protected final InstallationManagerFacade delegate;
+    protected final ConfigManager             configManager;
+    protected final String                    backupDir;
 
     protected SaasUserCredentials saasUserCredentials;
 
     @Inject
     public InstallationManagerService(@Named("installation-manager.backup_dir") String backupDir,
-                                      IMArtifactLabeledFacade delegate,
+                                      IMCliFilteredFacade delegate,
                                       ConfigManager configManager) {
         this.delegate = delegate;
         this.configManager = configManager;
@@ -244,7 +245,7 @@ public class InstallationManagerService {
                            @ApiResponse(code = 500, message = "Server error")})
     public javax.ws.rs.core.Response getUpdates() {
         try {
-            Collection<UpdatesArtifactInfo> updates = delegate.getAllUpdates(ArtifactFactory.createArtifact(CDECArtifact.NAME));
+            Collection<UpdatesArtifactInfo> updates = delegate.getAllUpdates(createArtifact(CDECArtifact.NAME));
             return javax.ws.rs.core.Response.ok(updates).build();
         } catch (Exception e) {
             return handleException(e);
@@ -347,7 +348,7 @@ public class InstallationManagerService {
                 return handleException(new IllegalStateException("There is no appropriate version to install"),
                                        javax.ws.rs.core.Response.Status.BAD_REQUEST);
             }
-            Map<String, String> properties = configManager.prepareInstallProperties(null, installType, artifact, version);
+            Map<String, String> properties = configManager.prepareInstallProperties(null, installType, artifact, version, false);
             final InstallOptions installOptions = new InstallOptions();
             installOptions.setInstallType(installType);
             installOptions.setConfigProperties(properties);
