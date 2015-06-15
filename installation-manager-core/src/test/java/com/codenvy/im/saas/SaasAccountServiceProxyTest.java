@@ -24,7 +24,7 @@ import com.codenvy.im.utils.HttpException;
 import com.codenvy.im.utils.HttpTransport;
 
 import org.eclipse.che.api.account.shared.dto.AccountReference;
-import org.eclipse.che.api.account.shared.dto.SubscriptionDescriptor;
+import com.codenvy.api.subscription.shared.dto.SubscriptionDescriptor;
 import org.eclipse.che.commons.json.JsonParseException;
 import org.mockito.Mock;
 import org.testng.annotations.BeforeMethod;

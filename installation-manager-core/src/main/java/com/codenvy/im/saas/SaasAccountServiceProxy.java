@@ -23,7 +23,7 @@ import com.google.inject.Singleton;
 
 import org.eclipse.che.api.account.shared.dto.AccountReference;
 import org.eclipse.che.api.account.shared.dto.MemberDescriptor;
-import org.eclipse.che.api.account.shared.dto.SubscriptionDescriptor;
+import com.codenvy.api.subscription.shared.dto.SubscriptionDescriptor;
 
 import javax.annotation.Nullable;
 import javax.inject.Named;
