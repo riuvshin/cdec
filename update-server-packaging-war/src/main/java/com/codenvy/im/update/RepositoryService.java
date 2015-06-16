@@ -485,7 +485,7 @@ public class RepositoryService {
     protected void doAddTrialSubscription(String userId, String accountId, String accessToken) throws IOException, JsonParseException {
         try {
             final String planId = "opm-com-25u-y";
-            
+
             NewSubscription newSubscription = DtoFactory.getInstance().createDto(NewSubscription.class);
             newSubscription.setAccountId(accountId);
             newSubscription.setPlanId(planId);
