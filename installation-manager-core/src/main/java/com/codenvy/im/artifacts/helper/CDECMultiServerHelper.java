@@ -131,7 +131,6 @@ public class CDECMultiServerHelper extends CDECArtifactHelper {
 
                 ), "Disable SELinux");
 
-
             case 1:
                 return new MacroCommand(new ArrayList<Command>() {{
                     // install puppet master
