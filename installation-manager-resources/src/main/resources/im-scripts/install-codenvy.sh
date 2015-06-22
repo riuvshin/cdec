@@ -200,7 +200,9 @@ pressYKeyToContinue() {
     if [[ ${SILENT} == false ]]; then
         print  "Continue installation [y/N]: "
         read ANSWER
-        [ ! "${ANSWER}" == "y" ] && exit 1
+        if [[ ! "${ANSWER}" == "y" ]]; then
+            exit 1
+        fi
     fi
 }
 
@@ -224,8 +226,6 @@ printPreInstallInfo_single() {
     printLn
     printLn "Sizing Guide       : http://docs.codenvy.com/onprem"
     printLn "Configuration File : "${CONFIG}
-    pressAnyKeyToContinueAndClearConsole
-
     printLn
 
     if [[ ${SILENT} == true ]]; then
@@ -239,7 +239,6 @@ printPreInstallInfo_single() {
         [ -z "${SYSTEM_ADMIN_PASSWORD}" ] && printLn "System admin password  : will prompt for entry"
         [ -z "${HOST_NAME}" ] && printLn "Codenvy DNS hostname   : will prompt for entry"
 
-        pressAnyKeyToContinue
         printLn
 
         if [ -z "${SYSTEM_ADMIN_NAME}" ]; then
@@ -292,8 +291,6 @@ printPreInstallInfo_multi() {
     printLn
     printLn "Sizing Guide       : http://docs.codenvy.com/onprem"
     printLn "Configuration File : "${CONFIG}
-    pressAnyKeyToContinueAndClearConsole
-
     printLn
 
     if [[ ${SILENT} == true ]]; then
@@ -329,7 +326,6 @@ printPreInstallInfo_multi() {
         [ -z ${SYSTEM_ADMIN_PASSWORD} ] && printLn "System admin password  : will prompt for entry"
         printLn "Codenvy nodes' DNS hostnames : will prompt for entry"
 
-        pressAnyKeyToContinue
         printLn
 
         if [ -z "${SYSTEM_ADMIN_NAME}" ]; then
@@ -341,7 +337,6 @@ printPreInstallInfo_multi() {
             print "System admin password: "
             SYSTEM_ADMIN_PASSWORD=$(askProperty)
         fi
-
 
         insertProperty "admin_ldap_user_name" ${SYSTEM_ADMIN_NAME}
         insertProperty "system_ldap_password" ${SYSTEM_ADMIN_PASSWORD}
@@ -392,11 +387,12 @@ doInstallImCli() {
 
 doDownloadBinaries() {
     nextStep 3 "Downloading Codenvy binaries... "
-    executeIMCommand im-download ${ARTIFACT} ${VERSION} | sed 's/\[..................................................\]//g'  >> install.log
-    validateExitCode $?
+    OUTPUT=$(executeIMCommand im-download ${ARTIFACT} ${VERSION})
+    EXIT_CODE=$?
+    echo ${OUTPUT} | sed 's/\[[=> ]*\]//g'  >> install.log
+    validateExitCode ${EXIT_CODE}
 
-    nextStep 4 "Checking binaries... "
-    executeIMCommand im-download --list-local | sed 's/\[..................................................\]//g'  >> install.log
+    executeIMCommand im-download --list-local >> install.log
     validateExitCode $?
 }
 
@@ -409,10 +405,10 @@ doInstallCodenvy() {
         fi
 
         if [ ${CODENVY_TYPE} == "multi" ]; then
-            executeIMCommand im-install --step ${STEP}-${STEP} --force --multi --config ${CONFIG} ${ARTIFACT} ${VERSION} | sed 's/[\/\\|-]//g' >> install.log
+            executeIMCommand im-install --step ${STEP}-${STEP} --force --multi --config ${CONFIG} ${ARTIFACT} ${VERSION} >> install.log
             validateExitCode $?
         else
-            executeIMCommand im-install --step ${STEP}-${STEP} --force --config ${CONFIG} ${ARTIFACT} ${VERSION} | sed 's/[\/\\|-]//g' >> install.log
+            executeIMCommand im-install --step ${STEP}-${STEP} --force --config ${CONFIG} ${ARTIFACT} ${VERSION} >> install.log
             validateExitCode $?
         fi
     done
@@ -453,7 +449,6 @@ continueTimer() {
 
 pauseTimer() {
     [ ! -z ${PROGRESS_PID} ] && kill -SIGSTOP ${PROGRESS_PID}
-    sleep 2
 }
 
 updateTimer() {
