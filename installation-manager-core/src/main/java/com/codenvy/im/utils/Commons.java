@@ -174,7 +174,7 @@ public class Commons {
                         Version v = valueOf(item.getFileName().toString());
                         versions.add(v);
                     }
-                } catch (IllegalArgumentException e) {
+                } catch (IllegalVersionException e) {
                     // maybe it isn't a version directory
                 }
             }
@@ -187,7 +187,13 @@ public class Commons {
     public static String extractServerUrl(String urlString) {
         try {
             URL url = new URL(urlString);
-            return url.getProtocol() + "://" + url.getHost();
+            String result = url.getProtocol() + "://" + url.getHost();
+
+            if (url.getPort() != -1) {
+                result += ":" + url.getPort();
+            }
+
+            return  result;
         } catch (MalformedURLException e) {
             throw new IllegalArgumentException(e);
         }

@@ -40,7 +40,7 @@ setRunOptions() {
     ARTIFACT="codenvy"
     CODENVY_TYPE="single"
     SILENT=false
-    VERSION=`curl -s https://codenvy.com/update/repository/properties/${ARTIFACT} | sed 's/.*"version":"\([^"].*\)".*/\1/'`
+    VERSION=`curl -s https://codenvy.com/update/repository/properties/${ARTIFACT} | sed 's/.*"version":"\([^"]*\)".*/\1/'`
     for var in "$@"; do
         if [[ "$var" == "--multi" ]]; then
             CODENVY_TYPE="multi"
@@ -157,7 +157,7 @@ insertProperty() {
 }
 
 updateHostsFile() {
-    [ -z ${HOST_NAME} ] && HOST_NAME=`grep host[_url]*=.* ${CONFIG} | cut -f2 -d '='`
+    [ -z ${HOST_NAME} ] && HOST_NAME=$(grep host_url\\W*=\\W*.* ${CONFIG} | sed 's/host_url\W*=\W*\(.*\)/\1/')
 
     if ! sudo grep -Eq "127.0.0.1.*puppet" /etc/hosts; then
         echo '127.0.0.1 puppet' | sudo tee --append /etc/hosts > /dev/null
@@ -440,7 +440,7 @@ runTimer() {
 }
 
 killTimer() {
-    [ ! -z ${PROGRESS_PID} ] && kill ${PROGRESS_PID}
+    [ ! -z ${PROGRESS_PID} ] && kill -KILL ${PROGRESS_PID}
 }
 
 continueTimer() {
@@ -512,6 +512,4 @@ set +e
 doDownloadBinaries
 doInstallCodenvy
 
-set -e
 printPostInstallInfo
-

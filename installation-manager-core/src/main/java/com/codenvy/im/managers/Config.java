@@ -70,38 +70,15 @@ public class Config {
 
     public static final Set<String> PROPERTIES_DEPEND_ON_VERSION = PROPERTIES_BY_VERSION.keySet();
 
-    public static final String MANDATORY = "MANDATORY";
-
     private Map<String, String> properties;
 
     public Config(Map<String, String> properties) {
         this.properties = Collections.unmodifiableMap(properties);
     }
 
-    /** Indicates is value valid for configuration. */
-    public static boolean isValid(String value) {
-        return value != null && !isMandatory(value);
-    }
-
-    /** Indicates is value empty. */
-    public static boolean isEmpty(String value) {
-        return value == null || value.isEmpty();
-    }
-
-    /** Indicates does value indicate mandatory config property. */
-    public static boolean isMandatory(String value) {
-        return value != null && value.equalsIgnoreCase(MANDATORY);
-    }
-
-    /** Indicates is value valid for mandatory config property. */
-    public static boolean isValidForMandatoryProperty(String value) {
-        return isValid(value) && !isEmpty(value);
-    }
-
     /** @return the property value */
     @Nullable
     public String getValue(String property) {
-        property = property.toLowerCase();
         if (PROPERTIES_DEPEND_ON_VERSION.contains(property)) {
             return PROPERTIES_BY_VERSION.get(property).get(getVersion());
         }
@@ -138,17 +115,6 @@ public class Config {
     /** Getter for #properties. Unmodifiable map will be returned */
     public Map<String, String> getProperties() {
         return unmodifiableMap(properties);
-    }
-
-    /** Checks if all properties are set and have correct values. */
-    public boolean isValid() {
-        for (String v : properties.values()) {
-            if (!isValid(v)) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     public Object getMongoAdminPassword() {

@@ -25,7 +25,6 @@ import com.google.inject.Singleton;
 import org.eclipse.che.api.auth.server.dto.DtoServerImpls;
 import org.eclipse.che.api.auth.shared.dto.Credentials;
 
-import javax.inject.Named;
 import javax.naming.Context;
 import javax.naming.NamingException;
 import javax.naming.directory.BasicAttribute;
@@ -33,6 +32,7 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.ModificationItem;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.Hashtable;
 
 import static com.codenvy.im.managers.NodeConfig.extractConfigFrom;
@@ -48,15 +48,12 @@ public class PasswordManager {
 
     private final ConfigManager configManager;
     private final HttpTransport httpTransport;
-    private final String        apiEndpoint;
 
     @Inject
-    public PasswordManager(@Named("api.endpoint") String apiEndpoint,
-                           ConfigManager configManager,
+    public PasswordManager(ConfigManager configManager,
                            HttpTransport httpTransport) throws IOException {
         this.configManager = configManager;
         this.httpTransport = httpTransport;
-        this.apiEndpoint = apiEndpoint;
     }
 
     /**
@@ -91,7 +88,7 @@ public class PasswordManager {
         credentials.setUsername(config.getValue("admin_ldap_user_name"));
         credentials.setRealm("sysldap");
 
-        String requestUrl = combinePaths(apiEndpoint, "/auth/login");
+        String requestUrl = combinePaths(configManager.getApiEndpoint(), "/auth/login");
         try {
             httpTransport.doPost(requestUrl, credentials);
         } catch (IOException e) {
@@ -99,9 +96,9 @@ public class PasswordManager {
         }
     }
 
-    private void updatePwd(byte[] newPassword, InitialDirContext ldapContext, Config config) throws NamingException {
+    private void updatePwd(byte[] newPassword, InitialDirContext ldapContext, Config config) throws NamingException, UnsupportedEncodingException {
         SSHAPasswordEncryptor sshaPasswordEncryptor = new SSHAPasswordEncryptor();
-        String encryptedPwd = sshaPasswordEncryptor.encrypt(newPassword).toString();
+        String encryptedPwd = new String(sshaPasswordEncryptor.encrypt(newPassword), "UTF-8");
 
         ModificationItem[] mods = new ModificationItem[]{
                 new ModificationItem(DirContext.REPLACE_ATTRIBUTE, new BasicAttribute("userPassword", encryptedPwd))

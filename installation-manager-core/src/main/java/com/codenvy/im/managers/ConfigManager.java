@@ -118,8 +118,6 @@ public class ConfigManager {
 
     /**
      * Merges two bunches of the properties from current and new configurations.
-     * As a rule method keeps the values of the old configuration except the {@link Config#VERSION} property
-     * and cases where new default values came.
      */
     public Map<String, String> merge(Version curVersion,
                                      Map<String, String> curProps,
@@ -128,32 +126,17 @@ public class ConfigManager {
         InstallType installType = detectInstallationType();
         Map<String, String> curDefaultProps = loadCodenvyDefaultProperties(curVersion, installType);
 
-        Map<String, String> props = new HashMap<>(curProps);
+        Map<String, String> props = new HashMap<>(newProps);
 
-        for (Map.Entry<String, String> e : newProps.entrySet()) {
+        for (Map.Entry<String, String> e : curProps.entrySet()) {
             String name = e.getKey();
             String value = e.getValue();
 
-            if (!props.containsKey(name)) {
-                props.put(name, value);
-            } else {
-                if (curDefaultProps.containsKey(name) && curProps.get(name).equals(curDefaultProps.get(name))) {
-                    if (!name.contains("pass") && !name.contains("pwd") && !name.contains("client_id") && !name.contains("secret")) {
-                        props.put(name, value);
-                    }
+            if (props.containsKey(name)) {
+                if (curDefaultProps.containsKey(name) && !value.equals(curDefaultProps.get(name))) {
+                    props.put(name, value);
                 }
             }
-
-            String aioOldName = "aio_" + name;
-            if (props.containsKey(aioOldName)) {
-                props.put(name, props.get(aioOldName));
-                props.remove(aioOldName);
-            }
-        }
-
-        props.remove(Config.VERSION);
-        if (newProps.containsKey(Config.VERSION)) {
-            props.put(Config.VERSION, newProps.get(Config.VERSION));
         }
 
         return props;
@@ -390,6 +373,21 @@ public class ConfigManager {
         }
     }
 
+
+    /**
+     * @return apiEndpoint
+     */
+    public String getApiEndpoint() throws IOException {
+        InstallType installType = detectInstallationType();
+        if (installType == InstallType.SINGLE_SERVER) {
+            // in single-node installation it's not required to modify '/etc/hosts' on the server where Codenvy is being installed
+            return "http://localhost/api";
+        } else {
+            Config config = loadInstalledCodenvyConfig(installType);
+            return format("%s://%s/api", config.getValue("host_protocol"), config.getValue("host_url"));
+        }
+    }
+
     /**
      * Prepares installation properties depending on artifact and installation type.
      *
@@ -435,9 +433,7 @@ public class ConfigManager {
                     }
                 }
 
-                properties.put(Config.VERSION, version2Install.toString());
                 setTemplatesProperties(properties);
-
                 return properties;
             default:
                 throw new ArtifactNotFoundException(artifact);

@@ -23,12 +23,12 @@
     <parent>
         <artifactId>maven-depmgt-pom</artifactId>
         <groupId>org.eclipse.che.depmgt</groupId>
-        <version>1.21.1-SNAPSHOT</version>
+        <version>3.11.2-SNAPSHOT</version>
         <relativePath />
     </parent>
     <groupId>com.codenvy.im</groupId>
     <artifactId>codenvy-im</artifactId>
-    <version>3.9.2-SNAPSHOT</version>
+    <version>3.11.2-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Codenvy :: IM</name>
     <modules>
@@ -41,6 +41,7 @@
         <module>installation-manager-cli-features</module>
         <module>installation-manager-server-api-docs</module>
         <module>installation-manager-server-war</module>
+        <module>installation-manager-tests</module>
     </modules>
     <scm>
         <connection>scm:git:git@github.com:codenvy/cdec.git</connection>

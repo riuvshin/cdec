@@ -26,6 +26,7 @@ import com.codenvy.im.managers.Config;
 import com.codenvy.im.managers.ConfigManager;
 import com.codenvy.im.managers.InstallOptions;
 import com.codenvy.im.managers.InstallType;
+import com.codenvy.im.managers.PropertiesNotFoundException;
 import com.codenvy.im.managers.UnknownInstallationTypeException;
 import com.codenvy.im.utils.HttpTransport;
 import com.codenvy.im.utils.Version;
@@ -40,11 +41,11 @@ import javax.annotation.Nullable;
 import javax.inject.Named;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 import static com.codenvy.im.utils.Commons.createDtoFromJson;
-import static java.lang.String.format;
 
 /**
  * @author Anatoliy Bazko
@@ -68,47 +69,30 @@ public class CDECArtifact extends AbstractArtifact {
 
     /** {@inheritDoc} */
     @Override
+    @Nullable
     public Version getInstalledVersion() throws IOException {
         try {
-            if (configManager.detectInstallationType() == InstallType.SINGLE_SERVER) {
-                // in single-node installation it's not required to modify '/etc/hosts' on the server where Codenvy is being installed
-                return getInstalledVersion("localhost");
-            } else {
-                Config config = configManager.loadInstalledCodenvyConfig();
-                return getInstalledVersion(config.getHostUrl());
+            String response;
+            try {
+                response = transport.doOption(configManager.getApiEndpoint() + "/", null);
+            } catch (IOException e) {
+                return null;
             }
+
+            ApiInfo apiInfo = createDtoFromJson(response, ApiInfo.class);
+            if (apiInfo == null) {
+                return null;
+            }
+
+            if (apiInfo.getIdeVersion().contains("codenvy.ide.version")) {
+                Config config = configManager.loadInstalledCodenvyConfig();
+                return Version.valueOf(config.getValue(Config.VERSION));
+            }
+
+            return Version.valueOf(apiInfo.getIdeVersion());
         } catch (UnknownInstallationTypeException | IOException e) {
             return null;
         }
-    }
-
-    @Nullable
-    protected Version getInstalledVersion(String hostName) throws IOException {
-        String response;
-        try {
-            String checkServiceUrl = format("http://%s/api/", hostName);
-            response = transport.doOption(checkServiceUrl, null);
-        } catch (IOException e) {
-            return null;
-        }
-
-        ApiInfo apiInfo = createDtoFromJson(response, ApiInfo.class);
-        if (apiInfo == null) {
-            return null;
-        }
-
-        if (apiInfo.getIdeVersion() == null
-            && apiInfo.getImplementationVersion() != null
-            && apiInfo.getImplementationVersion().equals("0.26.0")) {
-            return Version.valueOf("3.1.0"); // Old ide doesn't contain Ide Version property
-        }
-
-        if (apiInfo.getIdeVersion().contains("codenvy.ide.version")) {
-            Config config = configManager.loadInstalledCodenvyConfig();
-            return Version.valueOf(config.getValue(Config.VERSION));
-        }
-
-        return Version.valueOf(apiInfo.getIdeVersion());
     }
 
     /** {@inheritDoc} */
@@ -176,10 +160,24 @@ public class CDECArtifact extends AbstractArtifact {
 
     /** {@inheritDoc} */
     @Override
-    public void updateConfig(Map<String, String> properties) throws IOException {
+    public void updateConfig(Map<String, String> propertiesToUpdate) throws IOException {
         Config config = configManager.loadInstalledCodenvyConfig();
+        Map<String, String> actualProperties = config.getProperties();
+
+        // check if there are nonexistent property among propertiesToUpdate
+        List<String> nonexistentProperties = new ArrayList<>();
+        for (String property : propertiesToUpdate.keySet()) {
+            if (! actualProperties.containsKey(property)) {
+                nonexistentProperties.add(property);
+            }
+        }
+
+        if (nonexistentProperties.size() != 0) {
+            throw new PropertiesNotFoundException(nonexistentProperties);
+        }
+
         CDECArtifactHelper helper = getHelper(configManager.detectInstallationType());
-        Command commands = helper.getUpdateConfigCommand(config, properties);
+        Command commands = helper.getUpdateConfigCommand(config, propertiesToUpdate);
         commands.execute();
     }
 

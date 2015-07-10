@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # CODENVY CONFIDENTIAL
 # ________________
@@ -14,8 +15,6 @@
 # is strictly forbidden unless prior written permission is obtained
 # from Codenvy S.A..
 #
-
-#!/bin/bash
 filename=`ls update-server-packaging-tomcat/target | grep update-server-packaging-tomcat`
 if [ -z "$1" ] || [ "$1" == "prod" ]; then
     SSH_KEY_NAME=cl-server-prod-20130219
@@ -27,6 +26,11 @@ elif [ "$1" == "stg" ]; then
     SSH_AS_USER_NAME=codenvy
     AS_IP=updater.codenvy-stg.com
     echo "============[ Staging will be updated ]=============="
+elif [ "$1" == "ngt" ]; then
+    SSH_KEY_NAME=as1-cldide_cl-server.skey
+    SSH_AS_USER_NAME=codenvy
+    AS_IP=updater-nightly.codenvy-dev.com
+    echo "============[ Nightly will be updated ]=============="
 else
     echo "Unknown server destination"
     exit 1

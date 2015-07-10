@@ -23,11 +23,14 @@
     <parent>
         <artifactId>codenvy-im</artifactId>
         <groupId>com.codenvy.im</groupId>
-        <version>3.9.2-SNAPSHOT</version>
+        <version>3.11.2-SNAPSHOT</version>
     </parent>
     <artifactId>installation-manager-cli-bundle</artifactId>
     <packaging>bundle</packaging>
     <name>Codenvy :: IM :: Installation Manager CLI Bundle</name>
+    <properties>
+        <maven.javadoc.jar.skip>true</maven.javadoc.jar.skip>
+    </properties>
     <dependencies>
         <dependency>
             <groupId>com.codenvy.cli</groupId>

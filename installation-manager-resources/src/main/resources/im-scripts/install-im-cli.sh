@@ -7,7 +7,7 @@ setRunOptions() {
     DIR="${HOME}/codenvy-im"
     ARTIFACT="installation-manager-cli"
 
-    VERSION=`curl -s https://codenvy.com/update/repository/properties/${ARTIFACT} | sed 's/.*"version":"\([^"].*\)".*/\1/'`
+    VERSION=`curl -s https://codenvy.com/update/repository/properties/${ARTIFACT} | sed 's/.*"version":"\([^"]*\)".*/\1/'`
     for var in "$@"; do
         if [[ "$var" =~ --version=.* ]]; then
             VERSION=`echo "$var" | sed -e "s/--version=//g"`
@@ -66,20 +66,8 @@ printLn() {
 }
 
 printPreInstallInfo() {
-    checkOS
-
     printLn "Welcome. This program installs Codenvy Installation Manager."
     printLn ""
-    printLn "This program will:"
-    printLn "1. Configure the system"
-    printLn "2. Install Java and other required packages"
-    printLn "3. Install the Codenvy Installation Manager"
-    printLn ""
-    printLn ""
-    printLn "By continuing, you accept the Codenvy Agreement @ http://codenvy.com/legal"
-    printLn ""
-    printLn "Press any key to continue"
-    read -n1 -s
 }
 
 preconfigureSystem() {
