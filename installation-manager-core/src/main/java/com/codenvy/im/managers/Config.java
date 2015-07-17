@@ -52,6 +52,9 @@ public class Config {
     public static final String MONGO_ADMIN_PASSWORD_PROPERTY      = "mongo_admin_pass";
     public static final String NODE_SSH_USER_NAME_PROPERTY        = "node_ssh_user_name";
     public static final String NODE_SSH_USER_PRIVATE_KEY_PROPERTY = "node_ssh_user_private_key";
+    public static final String ADMIN_LDAP_USER_NAME               = "admin_ldap_user_name";
+    public static final String SYSTEM_LDAP_PASSWORD               = "system_ldap_password";
+
 
     public static final Map<String, Map<String, String>> PROPERTIES_BY_VERSION = new HashMap<String, Map<String, String>>() {{
         put(PUPPET_AGENT_VERSION, new HashMap<String, String>() {{
