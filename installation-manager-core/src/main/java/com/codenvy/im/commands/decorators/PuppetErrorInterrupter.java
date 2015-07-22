@@ -46,7 +46,7 @@ import static java.lang.String.format;
 /** @author Dmytro Nochevnov */
 public class PuppetErrorInterrupter implements Command {
 
-    // TODO [ndp] Roman is going to change puppet to log into file '/var/log/puppet/puppet-agent.log'
+    // TODO [ndp] https://jira.codenvycorp.com/browse/CDEC-294 to change puppet to log into file '/var/log/puppet/puppet-agent.log'
     public static Path PUPPET_LOG_FILE = Paths.get("/var/log/messages");
 
     public static final int READ_LOG_TIMEOUT_MILLIS = 200;
@@ -132,7 +132,7 @@ public class PuppetErrorInterrupter implements Command {
         try {
             lastLines = readNLines(node);
         } catch (AgentException | CommandException e) {
-            LOG.log(Level.SEVERE, getRuntimeErrorMessage(node, e), e);    // ignore to don't interrupt installation process
+            LOG.log(Level.WARNING, getRuntimeErrorMessage(node, e));    // ignore to don't interrupt installation process
         }
 
         try {
@@ -232,10 +232,10 @@ public class PuppetErrorInterrupter implements Command {
 
     private String getRuntimeErrorMessage(@Nullable NodeConfig node, IOException e) {
         if (node == null) {
-            return format("It is impossible to read puppet log locally: %s", e.getMessage());
+            return format("It was impossible to read puppet log locally: %s", e.getMessage());
         }
 
-        return format("It is impossible to read puppet log at the node '%s': %s", node.getHost(), e.getMessage());
+        return format("It was impossible to read puppet log at the node '%s': %s", node.getHost(), e.getMessage());
     }
 
     @Override
